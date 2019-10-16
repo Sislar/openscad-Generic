@@ -3,19 +3,19 @@ $fn=30;
 /* [Global] */
 
 // Render
-Objects = "Box"; //  [Both, Box, Lid]
+Objects = "Both"; //  [Both, Box, Lid]
 
 // use the following syntax to add 1 or more internal x compartment lengths (mm)
-x_sizes = [45,60,45];
+x_sizes = [40,40];
 // use the following syntax to add 1 or more internal y compartment widths (mm)
-y_sizes = [31, 31,31];
+y_sizes = [30,30];
 // Total height including Lid
-z_size = 25;
+z_size = 20;
 
 // Type of lid pattern
 gPattern = "Fancy"; //  [Hex, Diamond, Web, Solid, Fancy]
 // Tolerance
-gTol = 0.4;
+gTol = 0.3;
 // Wall Thickness
 gWT = 1.2;
 
@@ -162,33 +162,50 @@ module lid(ipPattern = "Hex", ipTol = 0.3){
   lFingerY = 16;  
 
   // main square with center removed for a pattern. 0.01 addition is a kludge to avoid a 2d surface remainging when substracting the lid from the box.
-  difference() {
+         difference() {
       translate([0,0,lAdjZ/2]) cube([lAdjX+0.01, lAdjY+0.01 , lAdjZ], center=true);
-      translate([0,0,lAdjZ/2]) cube([CutX, CutY, lAdjZ], center = true);      
+             
+      translate([0,0,lAdjZ/2]) cube([CutX, CutY, lAdjZ], center = true);
+
+       translate([TotalX/2-gWT/2,0,LidH/2])cube([gWT+0.01,TotalY-RailWidth,LidH],center=true);
+         
+     translate([TotalX/2,TotalY/2-RailWidth-1.4,-1]) RCube(18,0.8,4,0.4);
+
+     translate([TotalX/2,-TotalY/2+RailWidth+1.4,-1]) RCube(18,0.8,4,0.4);
   }
   
   // The Side triangles
-  intersection () {
+  difference() {
+    intersection () {
       union () {
           translate([-lAdjX/2,-lAdjY/2-LidH,LidH]) rotate([0,90,0]) linear_extrude(TotalX-2) polygon([[LidH,0],[LidH,LidH],[0,LidH]], paths=[[0,1,2]]);
           translate([-lAdjX/2,lAdjY/2,LidH]) rotate([0,90,0]) linear_extrude(TotalX-2) polygon([[0,0],[LidH,0],[LidH,LidH]], paths=[[0,1,2]]);
       }
+      
+      // check if this is real lid (ipTol>0) or negative lid (iptol = 0)
+      // if real lid remove center for pattern and remove latches
       if (ipTol>0) 
          {cube([lAdjX, lAdjY + 2*LidH-0.2, lAdjZ*2], center=true);}
-  }
+    }
+       
+    if (ipTol>0)
+    {
+        // cut out slots for the latch 
+        translate([TotalX/2-7,lAdjY/2+RailWidth/2+ipTol,LidH/2]) scale([1.5,1,1]) difference(){
+          rotate([0,0,45]) cube ([2+ipTol,2+ipTol,LidH+1],center=true);
+          translate([0,2,0]) cube ([4,4,LidH+2],center=true);
+          }  
+        translate([TotalX/2-7,-lAdjY/2-RailWidth/2-ipTol,LidH/2]) scale([1.5,1,1]) difference(){
+          rotate([0,0,45]) cube ([2+ipTol,2+ipTol,LidH+1],center=true);
+          translate([0,-2,0]) cube ([4,4,LidH+2],center=true); 
+            }   
+        translate([TotalX/2,TotalY/2-LidH/2-ipTol,0]) cube([12,LidH,LidH*2],center=true); 
 
-  // create the nubs
-  if (ipTol > 0) 
-  {
-  translate([5-lAdjX/2,-lAdjY/2-LidH/2,lAdjZ/2])  hull() {translate([2.5,0,0])sphere(0.4); translate([-2.5,0,0]) sphere(0.4);}
-  translate([5-lAdjX/2,lAdjY/2+LidH/2,lAdjZ/2]) hull() {translate([2.5,0,0])sphere(0.4); translate([-2.5,0,0]) sphere(0.4);}
+        translate([TotalX/2,-TotalY/2+LidH/2+ipTol,0]) cube([12,LidH,LidH*2],center=true); 
+    }
+    
   }
-  else
-  {
-  translate([5-lAdjX/2,-lAdjY/2-LidH/2,lAdjZ/2])  hull() {translate([2.5,0,0])sphere(0.6); translate([-2.5,0,0]) sphere(0.8);}
-  translate([5-lAdjX/2,lAdjY/2+LidH/2,lAdjZ/2]) hull() {translate([2.5,0,0])sphere(0.6); translate([-2.5,0,0]) sphere(0.8);}
-  }
-
+ 
   // Finger slot
   difference () {
       translate([-CutX/2,-lFingerY/2,0]) cube([lFingerX, lFingerY, lAdjZ]); 
@@ -198,13 +215,13 @@ module lid(ipPattern = "Hex", ipTol = 0.3){
 
   // Solid top
   if (ipPattern == "Solid") 
-    {
-    difference () {
-      translate([-CutX/2,-lFingerY/2,0]) cube([lFingerX, lFingerY,   lAdjZ]); 
-      translate([-CutX/2+lFingerX/2,0,20+LidH/2])sphere(20);     
-   }
-      
+      {   
+       difference (){ 
+         translate([-CutX/2,-CutY/2,0]) cube([CutX, CutY,   lAdjZ]);
+         translate([-CutX/2,-lFingerY/2,0]) cube([lFingerX, lFingerY, lAdjZ]); 
+      }
     }
+    
 
   // Spiderweb top
   if (ipPattern == "Web") 
@@ -280,9 +297,25 @@ module box () {
       translate([0,TotalY/2,AdjBoxHeight+RailWidth])  rotate([45,0,0]) cube([TotalX,RailWidth+0.7,RailWidth+0.7], center=true);  
 
       // Substract the lid from the rails
-      translate([0,0,AdjBoxHeight]) lid(ipPattern = "Solid",ipTol =0);
-      
-  }     
+      translate([0,0,AdjBoxHeight]) lid(ipPattern = "Solid",ipTol =0);      
+  }  
+  
+   // add backstop
+   translate([TotalX/2-1/2,0,TotalZ-LidH/2])cube([1,TotalY-RailWidth,LidH],center=true);
+  
+  // create the latches 
+    translate([TotalX/2-7,TotalY/2-0.1-RailWidth/2,TotalZ-LidH/2]) scale([1.5,1,1]) difference(){
+      rotate([0,0,45]) cube ([2,2,LidH+1],center=true);
+      translate([0,2,0]) cube ([4,4,LidH+2],center=true);
+      translate([0,-2,0])cube([2,2,LidH+2], center=true);
+      }  
+    translate([TotalX/2-7,-TotalY/2+0.1+RailWidth/2,TotalZ-LidH/2]) scale([1.5,1,1]) difference(){
+      rotate([0,0,45]) cube ([2,2,LidH+1],center=true);
+      translate([0,-2,0]) cube ([4,4,LidH+2],center=true);
+      translate([0,2,0])cube([2,2,LidH+2], center=true);
+      }
+
+  
 } 
 
 // Production Box
