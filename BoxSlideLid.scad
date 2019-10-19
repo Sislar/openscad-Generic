@@ -164,13 +164,12 @@ module lid(ipPattern = "Hex", ipTol = 0.3){
   // main square with center removed for a pattern. 0.01 addition is a kludge to avoid a 2d surface remainging when substracting the lid from the box.
          difference() {
       translate([0,0,lAdjZ/2]) cube([lAdjX+0.01, lAdjY+0.01 , lAdjZ], center=true);
-             
+
       translate([0,0,lAdjZ/2]) cube([CutX, CutY, lAdjZ], center = true);
+      translate([TotalX/2-gWT/2,0,LidH/2])cube([gWT+0.01,TotalY-RailWidth,LidH],center=true);
 
-       translate([TotalX/2-gWT/2,0,LidH/2])cube([gWT+0.01,TotalY-RailWidth,LidH],center=true);
-         
+     // make a slot for the latch can flex         
      translate([TotalX/2,TotalY/2-RailWidth-1.4,-1]) RCube(18,0.8,4,0.4);
-
      translate([TotalX/2,-TotalY/2+RailWidth+1.4,-1]) RCube(18,0.8,4,0.4);
   }
   
@@ -191,16 +190,12 @@ module lid(ipPattern = "Hex", ipTol = 0.3){
     if (ipTol>0)
     {
         // cut out slots for the latch 
-        translate([TotalX/2-7,lAdjY/2+RailWidth/2+ipTol,LidH/2]) scale([1.5,1,1]) difference(){
-          rotate([0,0,45]) cube ([2+ipTol,2+ipTol,LidH+1],center=true);
-          translate([0,2,0]) cube ([4,4,LidH+2],center=true);
-          }  
-        translate([TotalX/2-7,-lAdjY/2-RailWidth/2-ipTol,LidH/2]) scale([1.5,1,1]) difference(){
-          rotate([0,0,45]) cube ([2+ipTol,2+ipTol,LidH+1],center=true);
-          translate([0,-2,0]) cube ([4,4,LidH+2],center=true); 
-            }   
+        translate([TotalX/2-7,lAdjY/2+RailWidth/2+ipTol,LidH/2]) scale([1.5,1,1]) rotate([0,0,45]) cube ([2+ipTol,2+ipTol,LidH+1],center=true);
+          
+        translate([TotalX/2-7,-lAdjY/2-RailWidth/2-ipTol,LidH/2]) scale([1.5,1,1]) rotate([0,0,45]) cube ([2+ipTol,2+ipTol,LidH+1],center=true);
+  
+        // trip the rail to ease going past the nub
         translate([TotalX/2,TotalY/2-LidH/2-ipTol,0]) cube([12,LidH,LidH*2],center=true); 
-
         translate([TotalX/2,-TotalY/2+LidH/2+ipTol,0]) cube([12,LidH,LidH*2],center=true); 
     }
     
